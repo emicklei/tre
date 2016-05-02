@@ -118,6 +118,11 @@ func (e TracingError) LoggingContext() map[string]interface{} {
 	return ctx
 }
 
+// Cause returns the initiating error.
+func (e TracingError) Cause() error {
+	return e.cause
+}
+
 func lengthOfLargestMatchingPrefix(s1, s2 string) int {
 	if len(s1) == 0 {
 		return 0
