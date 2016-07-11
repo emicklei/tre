@@ -43,7 +43,7 @@ func (t tracePoint) printOn(b *bytes.Buffer) {
 
 // New creates a TracingError with a failure message and optional context information.
 // It accepts either an error, a TracingError or nil. If the error is nil then return nil.
-func New(err error, msg string, kv ...interface{}) *TracingError {
+func New(err error, msg string, kv ...interface{}) error {
 	if err == nil {
 		return nil
 	}
@@ -92,7 +92,9 @@ func (e TracingError) Error() string {
 		each.printOn(buf)
 		buf.WriteString("\n")
 	}
-	fmt.Fprintf(buf, e.cause.Error())
+	if e.cause != nil {
+		fmt.Fprintf(buf, e.cause.Error())
+	}
 	return buf.String()
 }
 
@@ -121,6 +123,14 @@ func (e TracingError) LoggingContext() map[string]interface{} {
 // Cause returns the initiating error.
 func (e TracingError) Cause() error {
 	return e.cause
+}
+
+// Cause returns the initiating error by recursively seeking it.
+func Cause(err error) error {
+	if te, ok := err.(*TracingError); ok {
+		return Cause(te.Cause())
+	}
+	return err
 }
 
 func lengthOfLargestMatchingPrefix(s1, s2 string) int {

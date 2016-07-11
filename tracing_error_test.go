@@ -9,10 +9,14 @@ func TestTracingError(t *testing.T) {
 	if len(rootPath) == 0 {
 		t.Fail()
 	}
-	e := New(propError(), "prop failed", "ik", "Koen")
+	e := New(propError(), "prop failed", "ik", "Koen").(*TracingError)
 	if got, want := len(e.callTrace), 2; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
+	if got, want := Cause(e).Error(), "fail 1"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+
 }
 
 func propError() error {
@@ -24,7 +28,7 @@ func giveError() error {
 }
 
 func TestEmptyTracingError(t *testing.T) {
-	e := New(errors.New("empty"), "empty")
+	e := New(errors.New("empty"), "empty").(*TracingError)
 	ctx := e.LoggingContext()
 	if ctx["err"] != e.cause {
 		t.Error("err expected")
