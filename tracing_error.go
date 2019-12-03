@@ -87,13 +87,12 @@ func newTracePoint() tracePoint {
 // Error returns a pretty report of this error.
 func (e TracingError) Error() string {
 	buf := new(bytes.Buffer)
-	for i := len(e.callTrace) - 1; i >= 0; i-- {
-		each := e.callTrace[i]
-		each.printOn(buf)
-		buf.WriteString("\n")
-	}
 	if e.cause != nil {
 		fmt.Fprintf(buf, e.cause.Error())
+	}
+	for _, each := range e.callTrace {
+		buf.WriteString("\n")
+		each.printOn(buf)
 	}
 	return buf.String()
 }
