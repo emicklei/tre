@@ -21,7 +21,7 @@ func init() {
 // TracingError encapsulates an error and collects tracing information
 // back to the point where it is handled (logged,ignored,responded...).
 type TracingError struct {
-	cause     error
+	error
 	callTrace []tracePoint
 }
 
@@ -55,7 +55,7 @@ func New(err error, msg string, kv ...interface{}) error {
 		terror = ewc
 	} else {
 		terror = &TracingError{
-			cause:     err,
+			error:     err,
 			callTrace: []tracePoint{tp},
 		}
 	}
@@ -92,8 +92,8 @@ func (e TracingError) Error() string {
 		each.printOn(buf)
 		buf.WriteString("\n")
 	}
-	if e.cause != nil {
-		fmt.Fprintf(buf, e.cause.Error())
+	if e.error != nil {
+		fmt.Fprintf(buf, e.error.Error())
 	}
 	return buf.String()
 }
@@ -108,7 +108,7 @@ func (e TracingError) LoggingContext() map[string]interface{} {
 			ctx[k] = v
 		}
 	}
-	ctx["err"] = e.cause
+	ctx["err"] = e.error
 	if len(e.callTrace) > 0 {
 		caught := e.callTrace[0]
 		ctx["line"] = caught.line
@@ -122,7 +122,18 @@ func (e TracingError) LoggingContext() map[string]interface{} {
 
 // Cause returns the initiating error.
 func (e TracingError) Cause() error {
-	return e.cause
+	return e.error
+}
+
+// As assists with errors.Unwrap
+func (e TracingError) As(target interface{}) bool {
+	_, ok := target.(TracingError)
+	return ok
+}
+
+// Unwrap to be able to easily nest/unnest
+func (e TracingError) Unwrap() error {
+	return e.error
 }
 
 // Cause returns the initiating error by recursively seeking it.
