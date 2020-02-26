@@ -16,7 +16,6 @@ func TestTracingError(t *testing.T) {
 	if got, want := Cause(e).Error(), "fail 1"; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
-
 }
 
 func propError() error {
@@ -30,10 +29,10 @@ func giveError() error {
 func TestEmptyTracingError(t *testing.T) {
 	e := New(errors.New("empty"), "empty").(*TracingError)
 	ctx := e.LoggingContext()
-	if ctx["err"] != e.cause {
+	if ctx["err"] != e.error {
 		t.Error("err expected")
 	}
-	if ctx["err"] != e.cause {
+	if ctx["err"] != e.error {
 		t.Error("err expected")
 	}
 	if ctx["msg"] != "empty" {
