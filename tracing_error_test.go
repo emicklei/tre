@@ -2,8 +2,26 @@ package tre
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
+
+func TestTracingErrorString(t *testing.T) {
+	err := errors.New("test")
+	terr := New(err, "msg", "key", "value")
+	suffix := `tre/tracing_error_test.go:11 tre.TestTracingErrorString:msg key=value 
+cause: test`
+	if got, want := strings.Contains(flatten(terr.Error()), flatten(suffix)), true; got != want {
+		t.Log(flatten(terr.Error()))
+		t.Log(flatten(suffix))
+		t.Errorf("got [%v]:%T want [%v]:%T", got, got, want, want)
+	}
+}
+
+// remove tabs and newlines and spaces
+func flatten(s string) string {
+	return strings.Replace((strings.Replace(s, "\n", "[n]", -1)), "\t", "[t]", -1)
+}
 
 func TestTracingError(t *testing.T) {
 	if len(rootPath) == 0 {

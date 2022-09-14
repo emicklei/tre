@@ -93,6 +93,7 @@ func (e TracingError) Error() string {
 		buf.WriteString("\n")
 	}
 	if e.error != nil {
+		buf.WriteString("cause: ")
 		fmt.Fprintf(buf, e.error.Error())
 	}
 	return buf.String()
