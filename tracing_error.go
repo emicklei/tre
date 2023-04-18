@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 )
 
 // Root path is automatically determined from the calling function's source file location.
@@ -87,14 +88,15 @@ func newTracePoint() tracePoint {
 // Error returns a pretty report of this error.
 func (e TracingError) Error() string {
 	buf := new(bytes.Buffer)
-	for i := len(e.callTrace) - 1; i >= 0; i-- {
-		each := e.callTrace[i]
-		each.printOn(buf)
-		buf.WriteString("\n")
+	ctx := e.LoggingContext()
+	keys := []string{}
+	for k := range ctx {
+		keys = append(keys, k)
 	}
-	if e.error != nil {
-		buf.WriteString("cause: ")
-		fmt.Fprintf(buf, e.error.Error())
+	sort.Sort(sort.StringSlice(keys))
+	for _, each := range keys {
+		v := ctx[each]
+		fmt.Fprintf(buf, "%s=%v\n", each, v)
 	}
 	return buf.String()
 }
@@ -110,14 +112,13 @@ func (e TracingError) LoggingContext() map[string]interface{} {
 		}
 	}
 	ctx["err"] = e.error
+	ctx["err.type"] = fmt.Sprintf("%T", e.error)
 	if len(e.callTrace) > 0 {
 		caught := e.callTrace[0]
-		ctx["line"] = caught.line
 		ctx["func"] = caught.function
-		ctx["file"] = caught.filename
+		ctx["loc"] = fmt.Sprintf("%s:%d", caught.filename, caught.line)
 		ctx["msg"] = caught.message
 	}
-	ctx["stack"] = e.Error()
 	return ctx
 }
 

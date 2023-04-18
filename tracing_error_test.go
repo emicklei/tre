@@ -9,8 +9,13 @@ import (
 func TestTracingErrorString(t *testing.T) {
 	err := errors.New("test")
 	terr := New(err, "msg", "key", "value")
-	suffix := `tre/tracing_error_test.go:11 tre.TestTracingErrorString:msg key=value 
-cause: test`
+	suffix := `err=test
+err.type=*errors.errorString
+func=tre.TestTracingErrorString
+key=value
+loc=Users/emicklei/xProjects/tre/tracing_error_test.go:11
+msg=msg
+`
 	if got, want := strings.Contains(flatten(terr.Error()), flatten(suffix)), true; got != want {
 		t.Log(flatten(terr.Error()))
 		t.Log(flatten(suffix))
