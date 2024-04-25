@@ -32,16 +32,21 @@ func TestTracingError(t *testing.T) {
 	if len(rootPath) == 0 {
 		t.Fail()
 	}
-	e := New(propError(), "prop failed", "ik", "Koen").(*TracingError)
-	if got, want := len(e.callTrace), 2; got != want {
+	e := New(propError1(), "prop failed", "ik", "Koen").(*TracingError)
+	if got, want := len(e.callTrace), 3; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
 	if got, want := Cause(e).Error(), "fail 1"; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
+	t.Log(e)
 }
 
-func propError() error {
+func propError1() error {
+	return New(propError2(), "call propError2()")
+}
+
+func propError2() error {
 	return New(giveError(), "give failed", "a", 42)
 }
 

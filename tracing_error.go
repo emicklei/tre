@@ -105,20 +105,18 @@ func (e TracingError) Error() string {
 // Fixed keys are {err,line,func,file,stack} unless the value is empty.
 func (e TracingError) LoggingContext() map[string]interface{} {
 	ctx := map[string]interface{}{}
-	// start with context ; could have reserved keys
-	for _, each := range e.callTrace {
-		for k, v := range each.context {
-			ctx[k] = v
-		}
-	}
 	ctx["err"] = e.error
 	ctx["err.type"] = fmt.Sprintf("%T", e.error)
-	if len(e.callTrace) > 0 {
-		caught := e.callTrace[0]
-		ctx["func"] = caught.function
-		ctx["loc"] = fmt.Sprintf("%s:%d", caught.filename, caught.line)
-		ctx["msg"] = caught.message
+	stack := new(bytes.Buffer)
+	// reverse order
+	for i := len(e.callTrace) - 1; i != -1; i-- {
+		caught := e.callTrace[i]
+		fmt.Fprintf(stack, "\n%s:%d %s [%s] ", caught.filename, caught.line, caught.function, caught.message)
+		for k, v := range caught.context {
+			fmt.Fprintf(stack, "%s=%v ", k, v)
+		}
 	}
+	ctx["stack"] = stack.String()
 	return ctx
 }
 
