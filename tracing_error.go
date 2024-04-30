@@ -102,7 +102,7 @@ func (e TracingError) Error() string {
 }
 
 // LoggingContext collects all data for context aware logging purposes.
-// Fixed keys are {err,line,func,file,stack} unless the value is empty.
+// Fixed keys are {err,err.type,stack} unless the value is empty.
 func (e TracingError) LoggingContext() map[string]interface{} {
 	ctx := map[string]interface{}{}
 	ctx["err"] = e.error
