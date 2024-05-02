@@ -18,7 +18,8 @@ func doThis(task string) error {
 }
 
 func doMore(task string) error {
-	return tre.New(doThat(task), "cannot do more", "task", task)
+	ctx := map[string]any{"task": task, "guality": 42}
+	return tre.New(doThat(task), "cannot do more", ctx)
 }
 
 func doThat(task string) error {
