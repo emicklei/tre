@@ -8,29 +8,35 @@ Package tre has the TracingError type to collect stack information when an error
 ## usage
 
 ```
-func foo(param string) error {
-    if err := someOperation(); err != nil {
-        return tre.New(err,"foo failed", "param", param)
-    }
+package main
+
+import (
+	"errors"
+	"fmt"
+
+	"github.com/emicklei/tre"
+)
+
+func main() {
+	err := doThis("sing")
+	fmt.Println(err.Error())
 }
 
-func bar() error {
-    info := map[string]interface{}
-    // ...doing stuff
-    info["some"] = "thing"
-    // ...doing more stuff
-    info["more"] = 2
-    // ...almost done
-    info["done"] = true
+func doThis(task string) error {
+	err := doMore("prepare")
+	return tre.New(err, "failed to do this", "task", task)
+}
 
-    // ...then an issue arises
-    if err != nil {
-        // Answer error containing the full context object as key value pairs
-        return tre.New(err, "bar failed", info)
-    }
+func doMore(task string) error {
+	ctx := map[string]any{"task": task, "guality": 42}
+	return tre.New(doThat(task), "cannot do more", ctx)
+}
 
-    return nil
+func doThat(task string) error {
+	return tre.New(errors.New("bummer"), "doing that failed", "task", task)
 }
 ```
+see `examples/main.go`
+
 
 (c) 2016, http://ernestmicklei.com. MIT License
