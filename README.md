@@ -13,6 +13,24 @@ func foo(param string) error {
         return tre.New(err,"foo failed", "param", param)
     }
 }
+
+func bar() error {
+    info := map[string]interface{}
+    // ...doing stuff
+    info["some"] = "thing"
+    // ...doing more stuff
+    info["more"] = 2
+    // ...almost done
+    info["done"] = true
+
+    // ...then an issue arises
+    if err != nil {
+        // Answer error containing the full context object as key value pairs
+        return tre.New(err, "bar failed", info)
+    }
+
+    return nil
+}
 ```
 
 (c) 2016, http://ernestmicklei.com. MIT License

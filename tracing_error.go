@@ -36,14 +36,16 @@ type tracePoint struct {
 }
 
 func (t tracePoint) printOn(b *bytes.Buffer) {
-	fmt.Fprintf(b, "%s:%d %s:%s", t.filename, t.line, t.function, t.message)
+	fmt.Fprintf(b, "%s:%d %s [%s]", t.filename, t.line, t.function, t.message)
 	for k, v := range t.context {
-		fmt.Fprintf(b, " %s=%v ", k, v)
+		fmt.Fprintf(b, " %s=%v", k, v)
 	}
 }
 
 // New creates a TracingError with a failure message and optional context information.
 // It accepts either an error, a TracingError or nil. If the error is nil then return nil.
+// Context information can either be provided as keys and values (e.g. "key1", value1,
+// "key2", value2, etc) or can be provided as a map[string]interface{} context object.
 func New(err error, msg string, kv ...interface{}) error {
 	if err == nil {
 		return nil
@@ -60,18 +62,28 @@ func New(err error, msg string, kv ...interface{}) error {
 			callTrace: []tracePoint{tp},
 		}
 	}
-	for i := 0; i < len(kv); i += 2 {
-		// handle odd key count
-		if i == len(kv)-1 {
-			break
+	cnt := len(kv)
+	if cnt == 1 {
+		// silently ignore incorrect context objects
+		if ctx, ok := kv[0].(map[string]interface{}); ok {
+			for k, v := range ctx {
+				tp.context[k] = v
+			}
 		}
-		// expect string keys
-		k, ok := kv[i].(string)
-		if !ok {
-			// convert if not
-			k = fmt.Sprintf("%v", kv[i])
+	} else {
+		for i := 0; i < len(kv); i += 2 {
+			// handle odd key count
+			if i == len(kv)-1 {
+				break
+			}
+			// expect string keys
+			k, ok := kv[i].(string)
+			if !ok {
+				// convert if not
+				k = fmt.Sprintf("%v", kv[i])
+			}
+			tp.context[k] = kv[i+1]
 		}
-		tp.context[k] = kv[i+1]
 	}
 	return terror
 }
@@ -102,19 +114,27 @@ func (e TracingError) Error() string {
 }
 
 // LoggingContext collects all data for context aware logging purposes.
-// Fixed keys are {err,line,func,file,stack} unless the value is empty.
+// Fixed keys are {err,err.type,msg,stack} unless the value is empty.
 func (e TracingError) LoggingContext() map[string]interface{} {
 	ctx := map[string]interface{}{}
+
+	// start with context ; could have reserved keys
+	// context variables can be 'overwritten' by newer contexts
+	for _, each := range e.callTrace {
+		for k, v := range each.context {
+			ctx[k] = v
+		}
+	}
+
 	ctx["err"] = e.error
 	ctx["err.type"] = fmt.Sprintf("%T", e.error)
+	ctx["msg"] = e.callTrace[0].message
 	stack := new(bytes.Buffer)
 	// reverse order
 	for i := len(e.callTrace) - 1; i != -1; i-- {
 		caught := e.callTrace[i]
-		fmt.Fprintf(stack, "\n%s:%d %s [%s] ", caught.filename, caught.line, caught.function, caught.message)
-		for k, v := range caught.context {
-			fmt.Fprintf(stack, "%s=%v ", k, v)
-		}
+		fmt.Fprintln(stack)
+		caught.printOn(stack)
 	}
 	ctx["stack"] = stack.String()
 	return ctx
